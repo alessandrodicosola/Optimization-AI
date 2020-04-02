@@ -62,9 +62,9 @@ class NeuralNetwork:
         # Set the attributes value
         _input[:,1:] = X
         
-        input_layer = self._random_state.randn(_input.shape[1],self.nodes)
-        output_layer = self._random_state.randn(self.nodes,len(np.unique(y)))
-        hidden_layers = [self._random_state.randn(self.nodes,self.nodes) for i in range(1,self.hidden_layers)]
+        input_layer = self._random_state.randn(_input.shape[1],self.nodes+1)
+        output_layer = self._random_state.randn(self.nodes+1,len(np.unique(y)))
+        hidden_layers = [self._random_state.randn(self.nodes+1,self.nodes+1) for i in range(1,self.hidden_layers)]
         
         self.weights.append(input_layer)
         for layer in hidden_layers:
@@ -76,16 +76,13 @@ class NeuralNetwork:
         
         for epoch in range(1,self.max_iterations+1):        
             
-            batch_count = 0
-            mse = 0     
             current_X = np.copy(_input)
             current_y = np.copy(y)
-        
             
+            mse = 0
+           
             # We have to empty all the input in order to go to the next epoch
             while len(current_X) > 0:
-                
-                batch_count += 1
                 
                 current_X,current_y,selected_X,selected_y,current_batch_size = self._batch(current_X,current_y,self.batch)
                
@@ -118,19 +115,19 @@ class NeuralNetwork:
                 for index in range(len(self.weights)):
                     # if index == 0 we have to use as an input the starting input otherwise the activated summation
                     oi = np.atleast_2d(observation if index == 0 else activated[index - 1])
-                    self.weights[index] += gradient_errors[index] * oi.T * self.alpha
+                    gradient = np.atleast_2d(gradient_errors[index])
+                    self.weights[index] += oi.T * gradient * self.alpha
                 
-                # binarize
-                    
+            # Compute the mse at the end of the epoch 
+            for observation,target in zip(_input,y):
                 binary_target = map_binary_classes[target]
-                
                 mse += np.mean(np.square(binary_target - self._forward(observation)[1][-1]))
-            
-            #Normalize mse 
-            mse = mse / batch_count
+            # Normalize mse of the current epoch
+            mse = mse / _input.shape[0]
+                
             # Print information
             if (epoch % 10 == 0): print(f"Epoch {epoch}: {mse}")
-                
+                    
             if mse < self.epsilon : return self
             
         return self
@@ -216,6 +213,7 @@ class NeuralNetwork:
         summation = np.dot(X,self.weights[0])
         summations.append(summation)
         a = self.activation.base(summation)
+        a[0] = 1
         activated.append(a)
         
         # Propagation to the rest of layers
@@ -223,6 +221,7 @@ class NeuralNetwork:
             summation = np.dot(a,self.weights[layer])
             summations.append(summation)
             a = self.activation.base(summation)
+            if layer != num_layers - 1: a[0]=1
             activated.append(a)
         
         

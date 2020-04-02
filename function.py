@@ -16,7 +16,7 @@ class Function(ABC):
 class Sigmoid(Function):
     @staticmethod
     def base(x):
-        return 1 / (1 + exp(-x))
+        return 1. / (1 + exp(-x))
     @staticmethod
     def derivative(x):
         return Sigmoid.base(x)*(1 - Sigmoid.base(x))

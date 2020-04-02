@@ -18,7 +18,9 @@ X_train,X_test,y_train,y_test = train_test_split(X,y)
 
   
 # Fit and predict the data
-network = NeuralNetwork("sigmoid")
+hidden_layers = 5
+nodes = 5
+network = NeuralNetwork("sigmoid",hidden_layers = hidden_layers, nodes = nodes)
 output_layer, y_predict = network.fit(X_train,y_train).predict(X_test)
 
 
